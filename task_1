@@ -1,1 +1,46 @@
-
+import tkinter as tk
+from tkinter import messagebox
+import requests
+from PIL import Image, ImageTk
+from io import BytesIO
+from urllib.parse import quote
+window = tk.Tk()
+window.title('Погода')
+window.geometry('350x300')
+key = 'e5b81ad532955da0e13a0c34a36369c2'
+metka = tk.Label(window, text='Введите город:')
+metka.pack(pady=10)
+pole = tk.Entry(window, width=20)
+pole.pack(pady=5)
+icon = tk.Label(window)
+icon.pack(pady=10)
+temperature = tk.Label(window, text='')
+temperature.pack(pady=10)
+def pogoda():
+    city = pole.get()
+    if city == '':
+        messagebox.showwarning('Ошибка', 'Напиши город')
+        return
+    code_city = quote(city)
+    url = 'https://api.openweathermap.org/data/2.5/weather?q=' + code_city + '&appid=' + key + '&units=metric'
+    try:
+        otvet = requests.get(url)
+        data = otvet.json()
+        if otvet.status_code == 200:
+            temperatura = data['main']['temp']
+            temperature.config(text=str(temperatura) + '°C')
+            cod = data['weather'][0]['icon']
+            icon_url = 'https://openweathermap.org/img/wn/' + cod + '@2x.png'
+            image = requests.get(icon_url)
+            object_image = Image.open(BytesIO(image.content))
+            object_image = object_image.resize((100, 100))
+            foto = ImageTk.PhotoImage(object_image)
+            icon.config(image=foto)
+            icon.image = foto
+        else:
+            messagebox.showerror('Ошибка', f'Код: {otvet.status_code}\n{data.get("message", "Такого города нет")}')
+    except Exception as error:
+        messagebox.showerror('Ошибка', f'Интернета нет :(\n{error}')
+button = tk.Button(window, text='Узнать погоду', command=pogoda)
+button.pack(pady=10)
+window.mainloop()
